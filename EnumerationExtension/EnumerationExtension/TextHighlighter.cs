@@ -5,31 +5,23 @@ namespace EnumerationExtension
 {
     public class TextHighlighter
     {
-        /// <summary>
-        /// Adornment brush.
-        /// </summary>
-        private readonly Brush _brush;
-
-        /// <summary>
-        /// Adornment pen.
-        /// </summary>
-        private readonly Pen _pen;
+        private readonly Brush _backgroundBrush;        
+        private readonly Pen _borderPen;
 
         public TextHighlighter()
         {
-            // Create the pen and brush to color the box behind the a's
-            _brush = new SolidColorBrush(Color.FromArgb(0x20, 0x00, 0x00, 0xee));
-            _brush.Freeze();
+            _backgroundBrush = new SolidColorBrush(Color.FromArgb(0x20, 0x00, 0xee, 0x22));
+            _backgroundBrush.Freeze();
 
             var _penBrush = new SolidColorBrush(Colors.Red);
             _penBrush.Freeze();
-            _pen = new Pen(_penBrush, 0.5);
-            _pen.Freeze();
+            _borderPen = new Pen(_penBrush, 0.5);
+            _borderPen.Freeze();
         }
 
         public Image Highlight(Geometry geometry)
         {
-            var drawing = new GeometryDrawing(_brush, _pen, geometry);
+            var drawing = new GeometryDrawing(_backgroundBrush, _borderPen, geometry);
             drawing.Freeze();
 
             var drawingImage = new DrawingImage(drawing);

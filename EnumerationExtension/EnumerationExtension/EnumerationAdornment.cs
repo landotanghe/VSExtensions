@@ -4,6 +4,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Formatting;
+using System.Text.RegularExpressions;
 
 namespace EnumerationExtension
 {
@@ -14,20 +15,9 @@ namespace EnumerationExtension
     {
         public const string Name = "EnumerationAdornment";
 
-        /// <summary>
-        /// The layer of the adornment.
-        /// </summary>
-        private readonly IAdornmentLayer _layer;
-
-        private readonly TextHighlighter _textMarker;
-
-        /// <summary>
-        /// Text view where the adornment is created.
-        /// </summary>
-        private readonly IWpfTextView _view;
-
-        
-
+        private readonly TextHighlighter _textHighlighter;
+        private readonly IAdornmentLayer _layer;    
+        private readonly IWpfTextView _view;    
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EnumerationAdornment"/> class.
@@ -45,7 +35,7 @@ namespace EnumerationExtension
             _view = view;
             _view.LayoutChanged += OnLayoutChanged;
 
-            _textMarker = new TextHighlighter();
+            _textHighlighter = new TextHighlighter();
         }
 
         /// <summary>
@@ -61,7 +51,7 @@ namespace EnumerationExtension
         {
             foreach (ITextViewLine line in e.NewOrReformattedLines)
             {
-                this.CreateVisuals(line);
+                CreateVisuals(line);
             }
         }
 
@@ -71,21 +61,42 @@ namespace EnumerationExtension
         /// <param name="line">Line to add the adornments</param>
         private void CreateVisuals(ITextViewLine line)
         {
-            IWpfTextViewLineCollection textViewLines = _view.TextViewLines;
+            var text = _view.TextSnapshot.GetText(line.Start, line.Length);
+            var regex = new Regex("(// *TODO *)(.*)");
+            var matches = regex.Matches(text);
 
-            // Loop through each character, and place a box around any 'a'
-            for (int charIndex = line.Start; charIndex < line.End; charIndex++)
+            foreach (var match in matches)
             {
-                if (_view.TextSnapshot[charIndex] == 'a')
-                {
-                    SnapshotSpan span = new SnapshotSpan(_view.TextSnapshot, Span.FromBounds(charIndex, charIndex + 1));
-                    Geometry geometry = textViewLines.GetMarkerGeometry(span);
-                    if (geometry != null)
-                    {
-                        Image image = _textMarker.Highlight(geometry);
-                        _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, span, null, image, null);
-                    }
-                }
+                var m = (Match)match;
+
+                var todoTag = GetPosition(m.Groups[1], line);
+                var todoText = GetPosition(m.Groups[2], line);
+
+                Highlight(todoText);
+                Hide(todoTag);
+            }
+        }
+        
+        private Span GetPosition(Group matchedPart, ITextViewLine line)
+        {
+            var startPosition = line.Start + matchedPart.Index;
+            return Span.FromBounds(startPosition, startPosition + matchedPart.Length);
+        }
+
+        private void Hide(Span textToHide)
+        {
+            //SnapshotSpan span = new SnapshotSpan(_view.TextSnapshot, textToHide);
+            //_view.TextViewLines.
+        }
+
+        private void Highlight(Span textToHighlight)
+        {
+            SnapshotSpan span = new SnapshotSpan(_view.TextSnapshot, textToHighlight);
+            Geometry geometry = _view.TextViewLines.GetMarkerGeometry(span);
+            if (geometry != null)
+            {
+                Image image = _textHighlighter.Highlight(geometry);
+                _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, span, null, image, null);
             }
         }
     }
