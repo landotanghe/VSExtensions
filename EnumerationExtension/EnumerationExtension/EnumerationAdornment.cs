@@ -72,8 +72,13 @@ namespace EnumerationExtension
                 var todoTag = GetPosition(m.Groups[1], line);
                 var todoText = GetPosition(m.Groups[2], line);
 
-                Highlight(todoText);
-                Hide(todoTag);
+                SnapshotSpan span = new SnapshotSpan(_view.TextSnapshot, todoText);
+                Geometry geometry = _view.TextViewLines.GetMarkerGeometry(span);
+                if (geometry != null)
+                {
+                    Image image = _textHighlighter.Highlight(geometry);
+                    _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, span, null, image, null);
+                }
             }
         }
         
@@ -81,23 +86,6 @@ namespace EnumerationExtension
         {
             var startPosition = line.Start + matchedPart.Index;
             return Span.FromBounds(startPosition, startPosition + matchedPart.Length);
-        }
-
-        private void Hide(Span textToHide)
-        {
-            //SnapshotSpan span = new SnapshotSpan(_view.TextSnapshot, textToHide);
-            //_view.TextViewLines.
-        }
-
-        private void Highlight(Span textToHighlight)
-        {
-            SnapshotSpan span = new SnapshotSpan(_view.TextSnapshot, textToHighlight);
-            Geometry geometry = _view.TextViewLines.GetMarkerGeometry(span);
-            if (geometry != null)
-            {
-                Image image = _textHighlighter.Highlight(geometry);
-                _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, span, null, image, null);
-            }
-        }
+        }        
     }
 }
